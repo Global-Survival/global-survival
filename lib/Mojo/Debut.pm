@@ -1,5 +1,5 @@
 package Mojo::Debut;
-use Mojo::Base 'Mojolicious';
+use base qw(Contenticious);
 use Mojo::Log;
 
 my $content; # Handle for the content dir
@@ -7,6 +7,7 @@ my $content; # Handle for the content dir
 # This method will run once at server start
 sub startup {
 	my $self = shift;
+	
 	my $log = $self->log;
 	my @content_items;
 	my @pages;
@@ -27,16 +28,9 @@ sub startup {
 			@header_links = (@header_links, $content_item) unless( $content_item eq 'Home' );
 		}
 	}
-
-	# Documentation browser under "/perldoc"
-	$self->plugin('PODRenderer');
 	
-	# Select index file
-	$self->plugin(
-		'Directory' => { 
-			root => 'public',
-			dir_index => [qw'default.html index.html index.htm'] 
-		});
+	$log->debug( "Close content dir" );
+	closedir $content or die "$!";
 	
 	# Check requests
 	my $reqCheck = sub {
@@ -83,11 +77,8 @@ sub startup {
 		);
 
 	# Normal route to controller	  
-	$r->get('/pages/(:page)')
-	  ->to( %page_params );
-	  
-	$r->get('/sections/(:section)')
-	  ->to( %page_params );
+#	$r->get('/(:page)')
+#	  ->to( %page_params );
 
 	# Error handling for non-routable URLs
 #	$r->any('/*')
@@ -96,8 +87,14 @@ sub startup {
 #			action	=> 'error'
 #		);
 	
-	$log->debug( "Close content dir" );
-	closedir $content or die "$!";
+	$self->Contenticious::startup(@_); #SUPER::startup(@_);
+
+	# Select index file
+	$self->plugin(
+		'Directory' => { 
+			root => 'public',
+			dir_index => [qw'default.html index.html index.htm'] 
+		});
 }
 
 1;
